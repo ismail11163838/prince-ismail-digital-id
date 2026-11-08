@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="bn"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PRINCE ISMAIL ADMIN</title>
+<style>
+*{box-sizing:border-box}body{margin:0;padding:15px;background:#080808;color:#e9c66d;font-family:Georgia,serif}
+h1,h2{text-align:center}.card{max-width:650px;margin:15px auto;padding:18px;background:#151515;border:1px solid #a9853c;border-radius:15px}
+input,select,button{width:100%;padding:12px;margin:6px 0;border:1px solid #997936;border-radius:9px;background:#090909;color:white}
+button{background:#d6b45a;color:black;font-weight:bold}.user{padding:13px;margin:10px 0;background:#222;border-radius:10px}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:6px}#dashboard[hidden],#editor[hidden]{display:none}
+#qr{text-align:center;overflow-wrap:anywhere}#qr img{max-width:220px;background:white;padding:8px}
+</style></head><body>
+<h1>👑 𝑷𝑹𝑰𝑵𝑪𝑬 𝑰𝑺𝑴𝑨𝑰𝑳</h1><h2>DIGITAL-ID ADMIN</h2>
+<div class="card" id="login"><h2>ADMIN LOGIN</h2><input id="password" type="password" placeholder="Admin password"><button id="loginBtn">LOGIN</button><p id="loginError"></p></div>
+<div id="dashboard" hidden>
+<div class="card"><h2>CREATE DIGITAL ID</h2><input id="newName" placeholder="User name"><button id="createBtn">+ CREATE ID</button></div>
+<div class="card" id="editor" hidden><h2>EDIT PROFILE</h2>
+<input id="name" placeholder="Full name"><input id="phone" placeholder="Phone"><input id="address" placeholder="Address"><input id="age" placeholder="Age"><input id="work" placeholder="Profession">
+<select id="relationship"><option>Single</option><option>Married</option><option>In a Relationship</option></select>
+<label>Gallery photo (max 700 KB)</label><input id="photoFile" type="file" accept="image/*"><input id="photo" placeholder="Or photo URL (optional)">
+<input id="facebook" placeholder="Facebook URL"><input id="instagram" placeholder="Instagram URL"><input id="telegram" placeholder="Telegram URL"><input id="discord" placeholder="Discord URL"><input id="tiktok" placeholder="TikTok URL"><input id="youtube" placeholder="YouTube URL"><input id="imo" placeholder="IMO URL"><input id="whatsapp" placeholder="WhatsApp URL"><input id="gmail" placeholder="Gmail URL">
+<label>Theme color</label><input id="theme" type="color" value="#d6b45a"><button id="saveBtn">SAVE PROFILE</button><button id="closeBtn">CLOSE</button></div>
+<div class="card"><h2>ALL USERS</h2><div id="users">Loading...</div></div>
+<div class="card"><h2>UNIQUE QR CODE</h2><div id="qr">Select SHOW QR</div></div>
+<div class="card"><button id="logoutBtn">LOGOUT</button></div></div>
+<script>
+const $=id=>document.getElementById(id);let selected=null;
+async function api(path,opt={}){const r=await fetch("/.netlify/functions/api"+path,{...opt,headers:{"Content-Type":"application/json",...(opt.headers||{})}});let d={};try{d=await r.json()}catch{}if(!r.ok)throw Error(d.error||"Request failed");return d}
+async function check(){try{const d=await api("/admin/status");$("login").hidden=d.loggedIn;$("dashboard").hidden=!d.loggedIn;if(d.loggedIn)loadUsers()}catch(e){$("loginError").textContent=e.message}}
+$("loginBtn").onclick=async()=>{try{await api("/admin/login",{method:"POST",body:JSON.stringify({password:$("password").value})});$("loginError").textContent="";check()}catch(e){$("loginError").textContent=e.message}};
+$("createBtn").onclick=async()=>{try{await api("/admin/users",{method:"POST",body:JSON.stringify({name:$("newName").value})});$("newName").value="";loadUsers()}catch(e){alert(e.message)}};
+async function loadUsers(){try{const users=await api("/admin/users");$("users").innerHTML="";for(const u of users){const d=document.createElement("div");d.className="user";const h=document.createElement("h3");h.textContent=u.name;const p=document.createElement("p");p.textContent=u.active?"ACTIVE":"DISABLED";const a=document.createElement("div");a.className="actions";
+function btn(t,f){const b=document.createElement("button");b.textContent=t;b.onclick=f;a.append(b)}
+btn("EDIT PROFILE",()=>edit(u));btn("SHOW QR",()=>showQR(u.id));btn("OPEN PROFILE",()=>window.open("/u/"+encodeURIComponent(u.id),"_blank"));btn(u.active?"DISABLE":"ENABLE",()=>toggle(u.id,!u.active));btn("DELETE",()=>del(u.id));d.append(h,p,a);$("users").append(d)}if(!users.length)$("users").textContent="No users yet"}catch(e){alert(e.message)}}
+function edit(u){selected=u.id;for(const k of ["name","phone","address","age","work","relationship","photo","theme"])$(k).value=u[k]||({theme:"#d6b45a"}[k]||"");const l=u.links||{};for(const k of ["facebook","instagram","telegram","discord","tiktok","youtube","imo","whatsapp","gmail"])$(k).value=l[k]||"";$("photoFile").value="";$("editor").hidden=false;window.scrollTo(0,0)}
+$("closeBtn").onclick=()=>{$("editor").hidden=true;selected=null};
+$("saveBtn").onclick=async()=>{try{let photo=$("photo").value.trim(),f=$("photoFile").files[0];if(f){if(f.size>700*1024)throw Error("Photo must be under 700 KB");photo=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(f)})}
+const links={};for(const k of ["facebook","instagram","telegram","discord","tiktok","youtube","imo","whatsapp","gmail"])links[k]=$(k).value.trim();
+const body={name:$("name").value.trim(),phone:$("phone").value.trim(),address:$("address").value.trim(),age:$("age").value.trim(),work:$("work").value.trim(),relationship:$("relationship").value,photo,theme:$("theme").value,links};
+await api("/admin/users/"+encodeURIComponent(selected),{method:"PUT",body:JSON.stringify(body)});$("editor").hidden=true;selected=null;loadUsers();alert("Saved")}catch(e){alert(e.message)}};
+function showQR(id){const link=location.origin+"/u/"+encodeURIComponent(id),src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data="+encodeURIComponent(link);$("qr").innerHTML="";const img=document.createElement("img");img.src=src;const p=document.createElement("p");p.textContent=link;const a=document.createElement("a");a.href=src;a.download="digital-id-qr.png";a.textContent="DOWNLOAD QR";a.style.color="#e9c66d";$("qr").append(img,p,a)}
+async function toggle(id,active){try{await api("/admin/users/"+encodeURIComponent(id)+"/status",{method:"PATCH",body:JSON.stringify({active})});loadUsers()}catch(e){alert(e.message)}}
+async function del(id){if(!confirm("Delete this ID?"))return;try{await api("/admin/users/"+encodeURIComponent(id),{method:"DELETE"});loadUsers()}catch(e){alert(e.message)}}
+$("logoutBtn").onclick=async()=>{await api("/admin/logout",{method:"POST"});check()};
+check();
+</script></body></html>

@@ -1,0 +1,11 @@
+{
+  "name": "prince-ismail-digital-id",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "netlify dev"
+  },
+  "devDependencies": {
+    "netlify-cli": "^23.11.0"
+  }
+}

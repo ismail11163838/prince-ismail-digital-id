@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="bn"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PRINCE ISMAIL DIGITAL-ID</title>
+<style>
+*{box-sizing:border-box}body{margin:0;padding:18px;background:#080808;color:#eee;font-family:Georgia,serif}
+.card{max-width:500px;margin:25px auto;padding:24px;background:#151515;border:1px solid var(--gold,#d6b45a);border-radius:22px;text-align:center}
+h1,h2{color:var(--gold,#d6b45a)}.photo{width:140px;height:140px;border-radius:50%;object-fit:cover;border:3px solid var(--gold);margin:12px}
+.info{padding:12px;margin:8px 0;background:#222;border-radius:10px;text-align:left;overflow-wrap:anywhere}
+a{display:inline-block;color:var(--gold);border:1px solid var(--gold);padding:9px 12px;margin:5px;border-radius:9px;text-decoration:none}
+small{color:#999}
+</style></head><body>
+<div class="card" id="app"><h2>👑 PRINCE ISMAIL DIGITAL-ID</h2>Loading...</div>
+<script>
+const app=document.getElementById("app");
+const id=decodeURIComponent(location.pathname.split("/").filter(Boolean).pop()||"");
+const api=(p)=>fetch("/.netlify/functions/api"+p);
+function info(label,value){if(!value)return;const d=document.createElement("div");d.className="info";const b=document.createElement("b");b.textContent=label+": ";d.append(b,document.createTextNode(value));app.append(d)}
+function safeURL(v){try{const u=new URL(v);return ["https:","http:","mailto:","tel:"].includes(u.protocol)?u.href:null}catch{return null}}
+async function load(){
+ if(!id||id==="index.html"){app.innerHTML='<h2>👑 PRINCE ISMAIL DIGITAL-ID</h2><a href="/admin.html">ADMIN PANEL</a>';return}
+ try{
+  const r=await api("/public/"+encodeURIComponent(id));if(!r.ok)throw Error();
+  const u=await r.json();document.documentElement.style.setProperty("--gold",u.theme||"#d6b45a");app.innerHTML="";
+  const h=document.createElement("h2");h.textContent="👑 DIGITAL ID PROFILE";app.append(h);
+  if(u.photo){const im=document.createElement("img");im.className="photo";im.src=u.photo;im.alt="Profile photo";app.append(im)}
+  const name=document.createElement("h1");name.textContent=u.name;app.append(name);
+  info("Phone",u.phone);info("Address",u.address);info("Age",u.age);info("Profession",u.work);info("Relationship",u.relationship);
+  const links=u.links||{}, labels={facebook:"Facebook",instagram:"Instagram",telegram:"Telegram",discord:"Discord",tiktok:"TikTok",youtube:"YouTube",imo:"IMO",whatsapp:"WhatsApp",gmail:"Gmail"};
+  const box=document.createElement("div");for(const k in labels){const href=safeURL(links[k]);if(href){const a=document.createElement("a");a.href=href;a.target="_blank";a.rel="noopener noreferrer";a.textContent=labels[k];box.append(a)}}
+  if(box.children.length){const sh=document.createElement("h3");sh.textContent="SOCIAL LINKS";app.append(sh,box)}
+  const foot=document.createElement("small");foot.textContent="PRINCE ISMAIL DIGITAL-ID";app.append(foot);
+ }catch{app.innerHTML="<h2>Profile not found</h2>"}
+}load();
+</script></body></html>
